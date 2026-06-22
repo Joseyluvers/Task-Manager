@@ -44,21 +44,17 @@ header h1 {
 .input-group {
     display: flex;
     gap: 10px;
+    align-items: center;
 }
 
 .task-input {
-    flex: 1;
+    flex: 1 1 auto;
+    min-width: 0;
     padding: 12px 15px;
     border: 2px solid #e0e0e0;
     border-radius: 8px;
     font-size: 1em;
     transition: border-color 0.3s;
-}
-
-.task-input:focus {
-    outline: none;
-    border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
 .due-datetime-input {
@@ -67,12 +63,14 @@ header h1 {
     border-radius: 8px;
     font-size: 1em;
     transition: border-color 0.3s;
+    flex: 0 0 220px;
+    min-width: 140px;
 }
 
 .due-datetime-input:focus {
     outline: none;
     border-color: #667eea;
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.06);
 }
 
 /* Buttons */
@@ -421,7 +419,20 @@ header h1 {
 
     .input-group {
         flex-direction: column;
+        gap: 8px;
+        align-items: stretch;
     }
++
++    .input-group .task-input,
++    .input-group .due-datetime-input,
++    .input-group .btn-add {
++        width: 100%;
++        flex: 1 1 auto;
++    }
++
++    .due-datetime-input {
++        box-sizing: border-box;
++    }
 
     .filter-section {
         flex-wrap: wrap;

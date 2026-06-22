@@ -5,8 +5,11 @@ class TaskManager {
         this.currentFilter = 'all';
         this.notificationsEnabled = this.loadNotificationPreference();
         this.reminderCheckInterval = null;
+        this.audioContext = null;
+        this.audioUnlocked = false;
         this.initializeElements();
         this.attachEventListeners();
+        this.initializeAudioUnlock();
         this.notificationToggle.checked = this.notificationsEnabled;
         this.startReminderSystem();
         this.render();
@@ -42,7 +45,29 @@ class TaskManager {
         this.notificationToggle.addEventListener('change', (e) => {
             this.notificationsEnabled = e.target.checked;
             this.saveNotificationPreference();
+            if (this.notificationsEnabled) {
+                this.requestNotificationPermission();
+            }
         });
+    }
+
+    initializeAudioUnlock() {
+        const unlockAudio = () => {
+            if (this.audioUnlocked) return;
+
+            try {
+                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                if (this.audioContext.state === 'suspended') {
+                    this.audioContext.resume().catch(() => {});
+                }
+                this.audioUnlocked = true;
+            } catch (e) {
+                console.log('Audio unlock not supported:', e);
+            }
+        };
+
+        document.addEventListener('click', unlockAudio, { once: true, passive: true });
+        document.addEventListener('touchend', unlockAudio, { once: true, passive: true });
     }
 
     // Add a new task with due date
@@ -244,12 +269,31 @@ class TaskManager {
 
     // Send browser notification
     sendBrowserNotification(title, message) {
-        if ('Notification' in window && Notification.permission === 'granted') {
+        if (!('Notification' in window)) {
+            this.showNotification('Browser notifications are unavailable on this device.', 'info', 4000);
+            return;
+        }
+
+        if (Notification.permission === 'granted') {
             new Notification(title, {
                 body: message,
                 icon: '📋',
                 tag: `task-reminder-${title}`,
                 requireInteraction: false
+            });
+            return;
+        }
+
+        if (Notification.permission === 'default') {
+            Notification.requestPermission().then(permission => {
+                if (permission === 'granted') {
+                    new Notification(title, {
+                        body: message,
+                        icon: '📋',
+                        tag: `task-reminder-${title}`,
+                        requireInteraction: false
+                    });
+                }
             });
         }
     }
@@ -285,11 +329,9 @@ class TaskManager {
         }
     }
 
-    // Play notification sound
+    // Play notification sound and vibrate on supported devices
     playNotificationSound() {
-        // Create a longer repeating beep using the Web Audio API
-        try {
-            const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const playBeep = (audioContext) => {
             const oscillator = audioContext.createOscillator();
             const gainNode = audioContext.createGain();
 
@@ -300,27 +342,45 @@ class TaskManager {
             oscillator.type = 'sine';
 
             const startTime = audioContext.currentTime;
-            const repeatDuration = 0.5;
+            const repeatDuration = 0.4;
             const gapDuration = 0.2;
             const repeats = 3;
 
             for (let i = 0; i < repeats; i += 1) {
                 const beatStart = startTime + i * (repeatDuration + gapDuration);
                 const beatEnd = beatStart + repeatDuration;
-                gainNode.gain.setValueAtTime(0.0, beatStart);
-                gainNode.gain.linearRampToValueAtTime(0.3, beatStart + 0.02);
-                gainNode.gain.setValueAtTime(0.3, beatEnd - 0.05);
-                gainNode.gain.linearRampToValueAtTime(0.0, beatEnd);
+                gainNode.gain.setValueAtTime(0, beatStart);
+                gainNode.gain.linearRampToValueAtTime(0.35, beatStart + 0.02);
+                gainNode.gain.setValueAtTime(0.35, beatEnd - 0.05);
+                gainNode.gain.linearRampToValueAtTime(0, beatEnd);
             }
 
             oscillator.start(startTime);
             oscillator.stop(startTime + repeats * (repeatDuration + gapDuration));
 
             oscillator.onended = () => {
-                audioContext.close();
+                if (audioContext && audioContext.state !== 'closed') {
+                    audioContext.close().catch(() => {});
+                }
             };
+        };
+
+        try {
+            if (this.audioUnlocked && this.audioContext) {
+                if (this.audioContext.state === 'suspended') {
+                    this.audioContext.resume().catch(() => {});
+                }
+                playBeep(this.audioContext);
+            } else {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                playBeep(audioContext);
+            }
         } catch (e) {
             console.log('Could not play notification sound:', e);
+        }
+
+        if ('vibrate' in navigator) {
+            navigator.vibrate([200, 100, 200]);
         }
     }
 
@@ -328,11 +388,11 @@ class TaskManager {
     startReminderSystem() {
         this.requestNotificationPermission();
         
-        // Check reminders every minute
+        // Check reminders every 15 seconds so mobile timing is more responsive
         this.checkReminders();
         this.reminderCheckInterval = setInterval(() => {
             this.checkReminders();
-        }, 60000);
+        }, 15000);
 
         // Also check every 10 seconds for more frequent updates
         setInterval(() => {
