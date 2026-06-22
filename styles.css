@@ -99,13 +99,31 @@ body.dark-mode .theme-toggle {
     display: grid;
     grid-template-columns: minmax(180px, 1fr) minmax(180px, 220px) max-content;
     gap: 12px;
-    align-items: center;
+    align-items: end;
 }
 
 .task-input,
 .due-datetime-input,
 .btn-add {
     border-radius: 16px;
+}
+
+.datetime-field {
+    display: grid;
+    gap: 6px;
+    min-width: 0;
+}
+
+.datetime-field span {
+    color: #667eea;
+    font-size: 0.78rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+}
+
+body.dark-mode .datetime-field span {
+    color: #a5b4fc;
 }
 
 .task-input {

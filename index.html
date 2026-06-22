@@ -24,12 +24,15 @@
                     placeholder="Add a new task..." 
                     class="task-input"
                 >
-                <input 
-                    type="datetime-local" 
-                    id="dueDateTime" 
-                    class="due-datetime-input"
-                    title="Set due date and time"
-                >
+                <label class="datetime-field" for="dueDateTime">
+                    <span>Select time and date</span>
+                    <input 
+                        type="datetime-local" 
+                        id="dueDateTime" 
+                        class="due-datetime-input"
+                        title="Select time and date"
+                    >
+                </label>
                 <button id="addBtn" class="btn btn-add">Add Task</button>
             </div>
             <label class="notification-toggle">
