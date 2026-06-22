@@ -239,6 +239,11 @@ body.dark-mode .btn-clear {
     accent-color: #667eea;
 }
 
+.notification-toggle:has(input:disabled) {
+    cursor: not-allowed;
+    opacity: 0.65;
+}
+
 /* Notification Container */
 .notification-container {
     margin-bottom: 20px;

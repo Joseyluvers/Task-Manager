@@ -12,7 +12,7 @@ class TaskManager {
         this.attachEventListeners();
         this.initializeAudioUnlock();
         this.applyTheme();
-        this.notificationToggle.checked = this.notificationsEnabled;
+        this.syncNotificationToggleState();
         this.startReminderSystem();
         this.render();
     }
@@ -45,11 +45,13 @@ class TaskManager {
         });
 
         this.clearBtn.addEventListener('click', () => this.clearCompletedTasks());
-        this.notificationToggle.addEventListener('change', (e) => {
-            this.notificationsEnabled = e.target.checked;
-            this.saveSettings();
-            if (this.notificationsEnabled) {
-                this.requestNotificationPermission();
+        this.notificationToggle.addEventListener('change', async (e) => {
+            if (e.target.checked) {
+                await this.enableNotificationsFromUserGesture();
+            } else {
+                this.notificationsEnabled = false;
+                this.saveSettings();
+                this.showNotification('Notifications disabled', 'info');
             }
         });
 
@@ -58,23 +60,23 @@ class TaskManager {
         }
     }
 
-    initializeAudioUnlock() {
-        const unlockAudio = () => {
-            if (this.audioUnlocked) return;
+    unlockAudio() {
+        if (this.audioUnlocked) return;
 
-            try {
-                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                if (this.audioContext.state === 'suspended') {
-                    this.audioContext.resume().catch(() => {});
-                }
-                this.audioUnlocked = true;
-            } catch (e) {
-                console.log('Audio unlock not supported:', e);
+        try {
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            if (this.audioContext.state === 'suspended') {
+                this.audioContext.resume().catch(() => {});
             }
-        };
+            this.audioUnlocked = true;
+        } catch (e) {
+            console.log('Audio unlock not supported:', e);
+        }
+    }
 
-        document.addEventListener('click', unlockAudio, { once: true, passive: true });
-        document.addEventListener('touchend', unlockAudio, { once: true, passive: true });
+    initializeAudioUnlock() {
+        document.addEventListener('click', () => this.unlockAudio(), { once: true, passive: true });
+        document.addEventListener('touchend', () => this.unlockAudio(), { once: true, passive: true });
     }
 
     // Add a new task with due date
@@ -228,6 +230,10 @@ class TaskManager {
     // Check for tasks due soon and send notifications
     checkReminders() {
         if (!this.notificationsEnabled) return;
+        if ('Notification' in window && Notification.permission === 'denied') {
+            this.syncNotificationToggleState();
+            return;
+        }
 
         const now = new Date();
         this.tasks.forEach(task => {
@@ -292,16 +298,7 @@ class TaskManager {
         }
 
         if (Notification.permission === 'default') {
-            Notification.requestPermission().then(permission => {
-                if (permission === 'granted') {
-                    new Notification(title, {
-                        body: message,
-                        icon: '📋',
-                        tag: `task-reminder-${title}`,
-                        requireInteraction: false
-                    });
-                }
-            });
+            this.showNotification('Tap Enable Notifications and allow the permission prompt to receive browser reminders.', 'warning', 5000);
         }
     }
 
@@ -327,7 +324,7 @@ class TaskManager {
 
     loadNotificationPreference() {
         const settings = this.loadSettings();
-        return settings.notificationsEnabled !== false;
+        return settings.notificationsEnabled === true;
     }
 
     loadThemePreference() {
@@ -349,20 +346,70 @@ class TaskManager {
         this.applyTheme();
     }
 
-    // Request browser notification permission
-    requestNotificationPermission() {
-        if ('Notification' in window && Notification.permission === 'default') {
-            Notification.requestPermission().then(permission => {
-                if (permission === 'granted') {
-                    console.log('Notification permission granted');
-                }
-            });
+    syncNotificationToggleState() {
+        if (!this.notificationToggle) return;
+
+        if ('Notification' in window && Notification.permission === 'denied') {
+            this.notificationsEnabled = false;
+            this.saveSettings();
+            this.notificationToggle.checked = false;
+            this.notificationToggle.disabled = true;
+            this.notificationToggle.closest('.notification-toggle').title = 'Notifications are blocked in this browser. Enable them in site settings.';
+            return;
         }
+
+        this.notificationToggle.checked = this.notificationsEnabled;
+        this.notificationToggle.disabled = false;
+    }
+
+    async enableNotificationsFromUserGesture() {
+        this.unlockAudio();
+
+        if (!('Notification' in window)) {
+            this.notificationsEnabled = true;
+            this.notificationToggle.checked = true;
+            this.saveSettings();
+            this.showNotification('Mobile browser notifications are unavailable here. In-app alerts, sound, and vibration are enabled while this page is open.', 'info', 6000);
+            return;
+        }
+
+        let permission = Notification.permission;
+
+        if (permission === 'default') {
+            try {
+                permission = await Notification.requestPermission();
+            } catch (e) {
+                permission = Notification.permission;
+            }
+        }
+
+        if (permission === 'granted') {
+            this.notificationsEnabled = true;
+            this.notificationToggle.checked = true;
+            this.saveSettings();
+            this.showNotification('Notifications enabled. Keep this page open to receive task reminders on mobile.', 'success', 5000);
+            this.sendBrowserNotification('Task Manager notifications enabled', 'You will receive reminders for tasks that are due soon.');
+            this.playNotificationSound();
+            return;
+        }
+
+        this.notificationsEnabled = false;
+        this.notificationToggle.checked = false;
+        this.saveSettings();
+
+        if (permission === 'denied') {
+            this.notificationToggle.disabled = true;
+            this.notificationToggle.closest('.notification-toggle').title = 'Notifications are blocked in this browser. Enable them in site settings.';
+            this.showNotification('Notifications are blocked. Open your browser site settings and allow notifications for this page.', 'warning', 7000);
+            return;
+        }
+
+        this.showNotification('Notifications were not enabled. Tap Enable Notifications and allow the permission prompt.', 'warning', 6000);
     }
 
     // Play notification sound and vibrate on supported devices
     playNotificationSound() {
-        const playBeep = (audioContext) => {
+        const playBeep = (audioContext, closeWhenDone = false) => {
             const oscillator = audioContext.createOscillator();
             const gainNode = audioContext.createGain();
 
@@ -390,21 +437,21 @@ class TaskManager {
             oscillator.stop(startTime + repeats * (repeatDuration + gapDuration));
 
             oscillator.onended = () => {
-                if (audioContext && audioContext.state !== 'closed') {
+                if (closeWhenDone && audioContext && audioContext.state !== 'closed') {
                     audioContext.close().catch(() => {});
                 }
             };
         };
 
         try {
-            if (this.audioUnlocked && this.audioContext) {
+            if (this.audioUnlocked && this.audioContext && this.audioContext.state !== 'closed') {
                 if (this.audioContext.state === 'suspended') {
                     this.audioContext.resume().catch(() => {});
                 }
                 playBeep(this.audioContext);
             } else {
                 const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-                playBeep(audioContext);
+                playBeep(audioContext, true);
             }
         } catch (e) {
             console.log('Could not play notification sound:', e);
@@ -417,8 +464,6 @@ class TaskManager {
 
     // Start reminder checking system
     startReminderSystem() {
-        this.requestNotificationPermission();
-        
         // Check reminders every 15 seconds so mobile timing is more responsive
         this.checkReminders();
         this.reminderCheckInterval = setInterval(() => {
