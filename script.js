@@ -4,12 +4,14 @@ class TaskManager {
         this.tasks = this.loadTasks();
         this.currentFilter = 'all';
         this.notificationsEnabled = this.loadNotificationPreference();
+        this.theme = this.loadThemePreference();
         this.reminderCheckInterval = null;
         this.audioContext = null;
         this.audioUnlocked = false;
         this.initializeElements();
         this.attachEventListeners();
         this.initializeAudioUnlock();
+        this.applyTheme();
         this.notificationToggle.checked = this.notificationsEnabled;
         this.startReminderSystem();
         this.render();
@@ -27,6 +29,7 @@ class TaskManager {
         this.totalCount = document.getElementById('totalCount');
         this.completedCount = document.getElementById('completedCount');
         this.notificationToggle = document.getElementById('notificationsEnabled');
+        this.themeToggle = document.getElementById('themeToggle');
         this.notificationContainer = document.getElementById('notificationContainer');
     }
 
@@ -44,11 +47,15 @@ class TaskManager {
         this.clearBtn.addEventListener('click', () => this.clearCompletedTasks());
         this.notificationToggle.addEventListener('change', (e) => {
             this.notificationsEnabled = e.target.checked;
-            this.saveNotificationPreference();
+            this.saveSettings();
             if (this.notificationsEnabled) {
                 this.requestNotificationPermission();
             }
         });
+
+        if (this.themeToggle) {
+            this.themeToggle.addEventListener('click', () => this.toggleTheme());
+        }
     }
 
     initializeAudioUnlock() {
@@ -298,24 +305,48 @@ class TaskManager {
         }
     }
 
-    saveNotificationPreference() {
-        localStorage.setItem('taskManagerSettings', JSON.stringify({
-            notificationsEnabled: this.notificationsEnabled
-        }));
+    saveSettings() {
+        const settings = this.loadSettings();
+        settings.notificationsEnabled = this.notificationsEnabled;
+        settings.theme = this.theme;
+        localStorage.setItem('taskManagerSettings', JSON.stringify(settings));
     }
 
-    loadNotificationPreference() {
+    loadSettings() {
         const storedSettings = localStorage.getItem('taskManagerSettings');
         if (!storedSettings) {
-            return true;
+            return {};
         }
 
         try {
-            const settings = JSON.parse(storedSettings);
-            return settings.notificationsEnabled !== false;
+            return JSON.parse(storedSettings) || {};
         } catch (e) {
-            return true;
+            return {};
         }
+    }
+
+    loadNotificationPreference() {
+        const settings = this.loadSettings();
+        return settings.notificationsEnabled !== false;
+    }
+
+    loadThemePreference() {
+        const settings = this.loadSettings();
+        return settings.theme === 'dark' ? 'dark' : 'light';
+    }
+
+    applyTheme() {
+        document.body.classList.toggle('dark-mode', this.theme === 'dark');
+        document.body.classList.toggle('light-mode', this.theme === 'light');
+        if (this.themeToggle) {
+            this.themeToggle.textContent = this.theme === 'dark' ? '☀️ Day' : '🌙 Night';
+        }
+        this.saveSettings();
+    }
+
+    toggleTheme() {
+        this.theme = this.theme === 'dark' ? 'light' : 'dark';
+        this.applyTheme();
     }
 
     // Request browser notification permission
