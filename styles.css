@@ -8,7 +8,7 @@ body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: linear-gradient(135deg, #f4f7ff 0%, #d7e0ff 100%);
     min-height: 100vh;
-    padding: 20px;
+    padding: clamp(12px, 4vw, 28px);
     color: #1f2937;
     transition: background 0.4s ease, color 0.4s ease;
 }
@@ -19,12 +19,13 @@ body.dark-mode {
 }
 
 .container {
-    max-width: 640px;
+    width: min(100%, 760px);
+    max-width: 760px;
     margin: 0 auto;
     background: rgba(255, 255, 255, 0.95);
-    border-radius: 24px;
+    border-radius: clamp(16px, 4vw, 24px);
     box-shadow: 0 20px 60px rgba(15, 23, 42, 0.18);
-    padding: 28px;
+    padding: clamp(18px, 4vw, 30px);
     border: 1px solid rgba(102, 126, 234, 0.14);
     backdrop-filter: blur(10px);
     transition: background 0.4s ease, border 0.4s ease, box-shadow 0.4s ease;
@@ -41,13 +42,15 @@ header.app-header {
     justify-content: space-between;
     align-items: center;
     gap: 16px;
+    flex-wrap: wrap;
     margin-bottom: 30px;
 }
 
 header h1 {
     color: #111827;
-    font-size: 2.25rem;
+    font-size: clamp(1.75rem, 7vw, 2.25rem);
     margin-bottom: 6px;
+    line-height: 1.1;
 }
 
 body.dark-mode header h1 {
@@ -67,10 +70,12 @@ body.dark-mode .subtitle {
     border: 1px solid rgba(102, 126, 234, 0.3);
     border-radius: 999px;
     padding: 10px 16px;
+    min-height: 44px;
     background: rgba(255, 255, 255, 0.9);
     color: #334155;
     cursor: pointer;
     font-weight: 700;
+    white-space: nowrap;
     transition: transform 0.2s ease, background 0.3s ease, color 0.3s ease, border 0.3s ease;
 }
 
@@ -92,7 +97,7 @@ body.dark-mode .theme-toggle {
 
 .input-group {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 220px auto;
+    grid-template-columns: minmax(180px, 1fr) minmax(180px, 220px) max-content;
     gap: 12px;
     align-items: center;
 }
@@ -104,7 +109,6 @@ body.dark-mode .theme-toggle {
 }
 
 .task-input {
-    flex: 1 1 auto;
     min-width: 0;
     padding: 14px 18px;
     border: 1px solid rgba(148, 163, 184, 0.32);
@@ -133,8 +137,8 @@ body.dark-mode .task-input {
     border-radius: 16px;
     font-size: 0.96rem;
     transition: border-color 0.3s ease, box-shadow 0.3s ease;
-    width: 220px;
-    min-width: 160px;
+    width: 100%;
+    min-width: 0;
     max-width: 100%;
     background: #fafbff;
 }
@@ -153,6 +157,9 @@ body.dark-mode .due-datetime-input {
     font-size: 1rem;
     font-weight: 700;
     cursor: pointer;
+    min-height: 48px;
+    max-width: 100%;
+    white-space: nowrap;
     transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
@@ -200,6 +207,7 @@ body.dark-mode .btn-clear {
     align-items: center;
     gap: 8px;
     margin-top: 10px;
+    flex-wrap: wrap;
     cursor: pointer;
     color: #666;
     font-weight: 600;
@@ -225,6 +233,8 @@ body.dark-mode .btn-clear {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 12px;
+    overflow-wrap: anywhere;
     animation: slideIn 0.3s ease-out;
 }
 
@@ -280,13 +290,16 @@ body.dark-mode .btn-clear {
 /* Filter Section */
 .filter-section {
     display: flex;
+    flex-wrap: wrap;
     gap: 10px;
     margin-bottom: 20px;
     justify-content: center;
 }
 
 .filter-btn {
+    flex: 1 1 120px;
     padding: 8px 16px;
+    min-height: 44px;
     border: 2px solid #e0e0e0;
     background: white;
     border-radius: 8px;
@@ -310,6 +323,7 @@ body.dark-mode .btn-clear {
 /* Stats */
 .stats {
     display: flex;
+    flex-wrap: wrap;
     gap: 20px;
     margin-bottom: 20px;
     padding: 15px;
@@ -335,8 +349,10 @@ body.dark-mode .btn-clear {
 }
 
 .task-item {
-    display: flex;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) auto auto auto;
     align-items: center;
+    gap: 10px 12px;
     padding: 15px;
     background: #f9f9f9;
     border-left: 4px solid #667eea;
@@ -347,7 +363,7 @@ body.dark-mode .btn-clear {
 
 .task-item:hover {
     background: #f0f0f0;
-    transform: translateX(5px);
+    transform: translateY(-1px);
 }
 
 .task-item.completed {
@@ -364,7 +380,8 @@ body.dark-mode .btn-clear {
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-right: 15px;
+    flex-wrap: wrap;
+    min-width: 0;
 }
 
 .task-due-date {
@@ -373,7 +390,7 @@ body.dark-mode .btn-clear {
     padding: 4px 8px;
     border-radius: 4px;
     color: #666;
-    white-space: nowrap;
+    overflow-wrap: anywhere;
 }
 
 .task-due-date.overdue {
@@ -391,7 +408,7 @@ body.dark-mode .btn-clear {
 .task-time-remaining {
     font-size: 0.8em;
     color: #999;
-    white-space: nowrap;
+    overflow-wrap: anywhere;
 }
 
 .task-time-remaining.overdue {
@@ -407,22 +424,21 @@ body.dark-mode .btn-clear {
 .task-checkbox {
     width: 20px;
     height: 20px;
-    margin-right: 15px;
     cursor: pointer;
     accent-color: #667eea;
 }
 
 .task-text {
-    flex: 1;
+    min-width: 0;
     color: #333;
     font-size: 1em;
-    word-break: break-word;
+    overflow-wrap: anywhere;
 }
 
 .task-date {
     font-size: 0.8em;
     color: #999;
-    margin-right: 15px;
+    white-space: nowrap;
 }
 
 .delete-btn {
@@ -431,8 +447,10 @@ body.dark-mode .btn-clear {
     border: none;
     border-radius: 6px;
     padding: 6px 12px;
+    min-height: 40px;
     cursor: pointer;
     font-weight: 600;
+    white-space: nowrap;
     transition: all 0.3s;
 }
 
@@ -452,6 +470,7 @@ body.dark-mode .btn-clear {
 /* Social Footer */
 .social-footer {
     display: flex;
+    flex-wrap: wrap;
     gap: 12px;
     justify-content: center;
     margin-top: 18px;
@@ -460,9 +479,12 @@ body.dark-mode .btn-clear {
 
 .social-btn {
     display: inline-flex;
+    flex: 1 1 140px;
     align-items: center;
+    justify-content: center;
     gap: 8px;
     padding: 8px 12px;
+    min-height: 44px;
     border-radius: 8px;
     text-decoration: none;
     color: white;
@@ -492,59 +514,96 @@ body.dark-mode .btn-clear {
 }
 
 /* Responsive */
-@media (max-width: 500px) {
-    .container {
-        padding: 20px;
-    }
-
-    header h1 {
-        font-size: 2em;
-    }
-
+@media (max-width: 720px) {
     .input-group {
-        flex-direction: column;
-        gap: 8px;
-        align-items: stretch;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     }
 
-    .input-group .task-input,
-    .input-group .due-datetime-input,
-    .input-group .btn-add {
+    .btn-add {
+        grid-column: 1 / -1;
         width: 100%;
-        flex: 1 1 auto;
-    }
-
-    .due-datetime-input {
-        box-sizing: border-box;
-    }
-
-    .filter-section {
-        flex-wrap: wrap;
-    }
-
-    .stats {
-        flex-direction: column;
-        gap: 10px;
     }
 
     .task-item {
-        flex-wrap: wrap;
-    }
-
-    .task-date {
-        flex: 1 0 100%;
-        margin-right: 0;
-        margin-top: 10px;
+        grid-template-columns: auto minmax(0, 1fr) auto;
     }
 
     .task-due-section {
-        flex: 1 0 100%;
-        margin-right: 0;
-        margin-top: 10px;
+        grid-column: 2 / -1;
+        grid-row: 2;
+        justify-self: start;
+    }
+
+    .task-date {
+        grid-column: 2;
+        grid-row: 3;
     }
 
     .delete-btn {
-        flex: 1 0 100%;
-        margin-top: 10px;
+        grid-column: 3;
+        grid-row: 1 / span 3;
+        align-self: center;
+    }
+}
+
+@media (max-width: 520px) {
+    .stats {
+        flex-direction: column;
+        gap: 10px;
+        text-align: center;
+    }
+
+    header.app-header {
+        align-items: stretch;
+        margin-bottom: 24px;
+    }
+
+    header.app-header > div,
+    .theme-toggle {
+        width: 100%;
+    }
+
+    .input-group {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .btn-add {
+        grid-column: auto;
+    }
+
+    .filter-btn,
+    .social-btn {
+        flex-basis: calc(50% - 6px);
+    }
+}
+
+@media (max-width: 420px) {
+    body {
+        padding: 8px;
+    }
+
+    .container {
+        border-radius: 14px;
+    }
+
+    .filter-btn,
+    .social-btn {
+        flex-basis: 100%;
+    }
+
+    .task-item {
+        grid-template-columns: auto minmax(0, 1fr);
+    }
+
+    .task-due-section,
+    .task-date {
+        grid-column: 1 / -1;
+    }
+
+    .delete-btn {
+        grid-column: 1 / -1;
+        grid-row: auto;
+        width: 100%;
     }
 }
